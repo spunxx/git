@@ -2,40 +2,49 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
-
-	"github.com/google/go-github/v58/github"
 )
 
 func main() {
 
 	var (
-		token = getToken()
-		ctx   = context.Background()
-		log   = log.Logger{}
+		ctx = context.Background()
+		log = log.New(os.Stdout, "GIT: ", log.LstdFlags)
 	)
 
-	client := github.NewClient(nil).WithAuthToken(token)
-
-	user, _, err := client.Users.Get(ctx, "rsuther")
+	token, err := getToken()
 	if err != nil {
-		log.Print("error getting user: ", err)
+		log.Print("get token failed: ", err.Error())
+		return
 	}
 
-	log.Print(user.Email)
+	client := NewGit(ctx, GitConfig{
+		log:                log,
+		InsecureSkipVerify: true,
+		Token:              token,
+	})
+
+	user, err := client.User()
+	if err != nil {
+		log.Print("error getting user: ", err)
+		return
+	}
+
+	log.Print("email: ", user.GetEmail())
 
 }
 
-func getToken() string {
+func getToken() (string, error) {
 	token, ok := os.LookupEnv("GIT_TOKEN")
 	if !ok {
-		panic("GIT_TOKEN env var does not exist")
+		return "", fmt.Errorf("GIT_TOKEN is missing")
 	}
 
 	if len(token) == 0 {
-		panic("GIT_TOKEN is empty")
+		return "", fmt.Errorf("GIT_TOKEN is empty")
 	}
 
-	return token
+	return token, nil
 }

@@ -2,48 +2,58 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/google/go-github/v58/github"
 )
 
+const (
+	userURL = `https://api.github.com/user`
+)
+
+type GitConfig struct {
+	InsecureSkipVerify bool
+	log                *log.Logger
+	Token              string
+}
+
 type Git struct {
 	client *http.Client
 	ctx    context.Context
+	log    *log.Logger
 	token  string
 }
 
-func NewGit(ctx context.Context, token string) *Git {
+func NewGit(ctx context.Context, cfg GitConfig) *Git {
 	return &Git{
-		client: http.DefaultClient,
-		ctx:    ctx,
-		token:  token,
+		client: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: cfg.InsecureSkipVerify,
+				},
+			},
+		},
+		ctx:   ctx,
+		log:   cfg.log,
+		token: cfg.Token,
 	}
 }
 
 func (git *Git) User() (*github.User, error) {
-	request, err := git.newRequest(http.MethodGet, "https://api.github.com/user", nil)
+	request, err := git.newRequest(http.MethodGet, userURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := git.client.Do(request)
+	body, err := git.do(request)
 	if err != nil {
 		return nil, err
 	}
-
-	if response.StatusCode/100 != 2 {
-		return nil, fmt.Errorf("%s: %d", response.Status, response.StatusCode)
-	}
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
 
 	user := github.User{}
 
@@ -60,12 +70,7 @@ func (git *Git) Repos(user *github.User) ([]github.Repository, error) {
 		return nil, err
 	}
 
-	response, err := git.client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-
-	body, err := io.ReadAll(response.Body)
+	body, err := git.do(request)
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +82,20 @@ func (git *Git) Repos(user *github.User) ([]github.Repository, error) {
 	}
 
 	return repos, nil
+}
+
+func (git *Git) do(request *http.Request) ([]byte, error) {
+	response, err := git.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode/100 != 2 {
+		return nil, fmt.Errorf("%d: %s", response.StatusCode, response.Status)
+	}
+
+	return io.ReadAll(response.Body)
 }
 
 func (git *Git) newRequest(method, url string, body io.Reader) (*http.Request, error) {
