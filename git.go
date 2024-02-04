@@ -17,9 +17,10 @@ const (
 )
 
 type GitConfig struct {
-	InsecureSkipVerify bool
-	log                *log.Logger
-	Token              string
+	InsecureSkipVerify bool   `json:"insecureSkipVerify"`
+	Token              string `json:"token"`
+
+	Log *log.Logger
 }
 
 type Git struct {
@@ -39,7 +40,7 @@ func NewGit(ctx context.Context, cfg GitConfig) *Git {
 			},
 		},
 		ctx:   ctx,
-		log:   cfg.log,
+		log:   cfg.Log,
 		token: cfg.Token,
 	}
 }

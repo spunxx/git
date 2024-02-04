@@ -7,6 +7,10 @@ import (
 	"os"
 )
 
+type Config struct {
+	GitConfig GitConfig `json:"gitConfig"`
+}
+
 func main() {
 
 	var (
@@ -21,7 +25,7 @@ func main() {
 	}
 
 	client := NewGit(ctx, GitConfig{
-		log:                log,
+		Log:                log,
 		InsecureSkipVerify: true,
 		Token:              token,
 	})

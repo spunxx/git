@@ -12,11 +12,11 @@ import (
 func TestGit(t *testing.T) {
 
 	cfg := GitConfig{
-		log:                log.Default(),
+		Log:                log.Default(),
 		InsecureSkipVerify: true,
 		Token:              os.Getenv("GIT_TOKEN"),
 	}
-	assert.NotNil(t, cfg.log)
+	assert.NotNil(t, cfg.Log)
 	assert.NotEmpty(t, cfg.Token)
 
 	git := NewGit(context.Background(), cfg)
