@@ -1,4 +1,4 @@
-module example.com/git
+module github.com/spunxx/git
 
 go 1.21.1
 
