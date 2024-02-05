@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/google/go-github/v58/github"
@@ -20,13 +20,13 @@ type GitConfig struct {
 	InsecureSkipVerify bool   `json:"insecureSkipVerify"`
 	Token              string `json:"token"`
 
-	Log *log.Logger
+	Log *slog.Logger
 }
 
 type Git struct {
 	client *http.Client
 	ctx    context.Context
-	log    *log.Logger
+	log    *slog.Logger
 	token  string
 }
 
